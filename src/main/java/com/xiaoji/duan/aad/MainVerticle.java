@@ -329,7 +329,7 @@ public class MainVerticle extends AbstractVerticle {
 		String unionId = one.getString("unionId", "");
 
 		if (StringUtils.isEmpty(unionId)) {
-
+System.out.println("unionId is Empty");
 			JsonArray params = new JsonArray();
 			params.add(UUID.randomUUID().toString());
 			params.add(one.getString("subdomain"));
@@ -348,6 +348,7 @@ public class MainVerticle extends AbstractVerticle {
 						}
 					});
 		} else {
+			System.out.println("unionId is exist");
 			JsonArray params = new JsonArray();
 			params.add(one.getString("subdomain"));
 			params.add(one.getInteger("menuId"));

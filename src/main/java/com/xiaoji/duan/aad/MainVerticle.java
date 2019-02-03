@@ -1,5 +1,6 @@
 package com.xiaoji.duan.aad;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -112,7 +113,12 @@ public class MainVerticle extends AbstractVerticle {
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
             	System.out.println(rs.getOutput());
-				List<JsonObject> rootMenus = rs.getOutput().getList();
+				List<JsonObject> rootMenus = null;
+				
+				if (rs.getOutput() != null)
+					rootMenus = rs.getOutput().getList();
+				else
+					rootMenus = new ArrayList<>();
 				
 				if (rootMenus != null && rootMenus.size() > 0) {
 					rootfuture.complete(new JsonObject()
@@ -231,8 +237,11 @@ public class MainVerticle extends AbstractVerticle {
             if (find.succeeded()) {
             	ResultSet rs = find.result();
             	System.out.println(rs.getOutput());
-              JsonObject one = rs.getOutput().getJsonObject(0);
+              JsonObject one = null;
               
+              if (rs.getOutput() != null) {
+            	  one = rs.getOutput().getJsonObject(0);
+              }
               data.put("menuId", Integer.valueOf(data.getString("menuId")));
               data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
               data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
@@ -268,7 +277,12 @@ public class MainVerticle extends AbstractVerticle {
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
 				System.out.println(rs.getOutput());
-				List<JsonObject> menus = rs.getOutput().getList();
+				List<JsonObject> menus = null;
+				
+				if (rs.getOutput() != null)
+					rs.getOutput().getList();
+				else
+					menus = new ArrayList<>();
 				
 				ctx.response().end(new JsonObject().put("data", menus).encode());
 			} else {
@@ -288,7 +302,11 @@ public class MainVerticle extends AbstractVerticle {
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
             	System.out.println(rs.getOutput());
-				JsonObject one = rs.getOutput().getJsonObject(0);
+            	
+				JsonObject one = null;
+				
+				if (rs.getOutput() != null)
+					one = rs.getOutput().getJsonObject(0);
 				
 				if (one != null) {
 					one.put("isdel", true);

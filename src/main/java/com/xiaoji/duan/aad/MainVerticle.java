@@ -81,10 +81,10 @@ public class MainVerticle extends AbstractVerticle {
 		router.route("/aad").pathRegex("\\/*").handler(datahandler);
 
 		router.route("/aad/menus/*").handler(datahandler);
-		router.route("/aad/menus/:subdomain/currentmenus").handler(ctx -> this.currentmenus(ctx));
-		router.route("/aad/menus/:subdomain/list").handler(ctx -> this.list(ctx));
-		router.route("/aad/menus/:subdomain/save").handler(ctx -> this.save(ctx));
-		router.route("/aad/menus/:subdomain/:unionId/delete").handler(ctx -> this.delete(ctx));
+		router.route("/aad/menus/:subdomain/currentmenus").produces("application/json").handler(ctx -> this.currentmenus(ctx));
+		router.route("/aad/menus/:subdomain/list").produces("application/json").handler(ctx -> this.list(ctx));
+		router.route("/aad/menus/:subdomain/save").produces("application/json").handler(ctx -> this.save(ctx));
+		router.route("/aad/menus/:subdomain/:unionId/delete").produces("application/json").handler(ctx -> this.delete(ctx));
 
 		router.route("/aad/index").handler(ctx -> this.index(ctx));
 

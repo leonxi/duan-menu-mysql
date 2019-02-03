@@ -214,7 +214,7 @@ public class MainVerticle extends AbstractVerticle {
 				
 				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end(new JsonObject().put("data", response).encode());
 			} else {
-				ctx.response().end(new JsonObject().put("data", new JsonArray()).encode());
+				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end(new JsonObject().put("data", new JsonArray()).encode());
 			}
 		});
 	}
@@ -254,9 +254,9 @@ public class MainVerticle extends AbstractVerticle {
               }
 
               save(saveObject);
-              ctx.response().end("{}");
+              ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
             } else {
-              ctx.response().end("{}");
+              ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
             }
           
     	});
@@ -284,9 +284,9 @@ public class MainVerticle extends AbstractVerticle {
 				else
 					menus = new ArrayList<>();
 				
-				ctx.response().end(new JsonObject().put("data", menus).encode());
+				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end(new JsonObject().put("data", menus).encode());
 			} else {
-				ctx.response().end(new JsonObject().put("data", new JsonArray()).encode());
+				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end(new JsonObject().put("data", new JsonArray()).encode());
 			}
 		
 		});
@@ -311,13 +311,13 @@ public class MainVerticle extends AbstractVerticle {
 				if (one != null) {
 					one.put("isdel", true);
 					save(one);
-					ctx.response().end("{}");
+					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
 				} else {
-					ctx.response().end("{}");
+					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
 				}
 				
 			} else {
-				ctx.response().end("{}");
+				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
 			}
 		
 		});

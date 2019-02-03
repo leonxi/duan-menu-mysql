@@ -111,7 +111,8 @@ public class MainVerticle extends AbstractVerticle {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
-				List<JsonObject> rootMenus = rs.toJson().getJsonArray("data").getList();
+            	System.out.println(rs.getOutput());
+				List<JsonObject> rootMenus = rs.getOutput().getList();
 				
 				if (rootMenus != null && rootMenus.size() > 0) {
 					rootfuture.complete(new JsonObject()
@@ -130,9 +131,10 @@ public class MainVerticle extends AbstractVerticle {
 						mySQLClient.query("select * from aad_menus where subdomain='" + subdomain + "' and menuParentId=" + rootmenu.getInteger("menuId") + " order by menuOrder asc", findsub -> {
 
 							if (findsub.succeeded()) {
+				            	System.out.println(findsub.result().getOutput());
 								future.complete(new JsonObject()
 										.put("menu", rootmenu.getString("unionId"))
-										.put("sub_menus", findsub.result()));
+										.put("sub_menus", findsub.result().getOutput()));
 							} else {
 								future.fail(findsub.cause());
 							}
@@ -228,7 +230,8 @@ public class MainVerticle extends AbstractVerticle {
     	mySQLClient.query("select * from aad_menus where unionId='" + data.getString("unionId") + "'", find -> {
             if (find.succeeded()) {
             	ResultSet rs = find.result();
-              JsonObject one = rs.toJson().getJsonArray("data").getJsonObject(0);
+            	System.out.println(rs.getOutput());
+              JsonObject one = rs.getOutput().getJsonObject(0);
               
               data.put("menuId", Integer.valueOf(data.getString("menuId")));
               data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
@@ -264,8 +267,8 @@ public class MainVerticle extends AbstractVerticle {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
-				System.out.println(rs);
-				List<JsonObject> menus = rs.toJson().getJsonArray("data").getList();
+				System.out.println(rs.getOutput());
+				List<JsonObject> menus = rs.getOutput().getList();
 				
 				ctx.response().end(new JsonObject().put("data", menus).encode());
 			} else {
@@ -284,7 +287,8 @@ public class MainVerticle extends AbstractVerticle {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
-				JsonObject one = rs.toJson().getJsonArray("data").getJsonObject(0);
+            	System.out.println(rs.getOutput());
+				JsonObject one = rs.getOutput().getJsonObject(0);
 				
 				if (one != null) {
 					one.put("isdel", true);

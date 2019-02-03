@@ -264,6 +264,7 @@ public class MainVerticle extends AbstractVerticle {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
+				System.out.println(rs);
 				List<JsonObject> menus = rs.toJson().getJsonArray("data").getList();
 				
 				ctx.response().end(new JsonObject().put("data", menus).encode());

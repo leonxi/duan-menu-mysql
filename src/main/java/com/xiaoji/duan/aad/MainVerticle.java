@@ -286,7 +286,7 @@ public class MainVerticle extends AbstractVerticle {
 				
 				ctx.response().end(new JsonObject().put("data", menus).encode());
 			} else {
-				ctx.response().end("{}");
+				ctx.response().end(new JsonObject().put("data", new JsonArray()).encode());
 			}
 		
 		});

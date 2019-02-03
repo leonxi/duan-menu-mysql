@@ -340,13 +340,13 @@ System.out.println("unionId is Empty");
 			params.add(one.getString("menuPopupId"));
 			params.add(one.getInteger("menuOrder"));
 
-			mySQLClient.callWithParams(
+			mySQLClient.updateWithParams(
 					"insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
-					params, new JsonArray(), insert -> {
+					params, insert -> {
 						if (insert.failed()) {
 							insert.cause().printStackTrace();
 						} else {
-							System.out.println(insert.result().getOutput());
+							System.out.println(insert.result().toJson());
 						}
 					});
 		} else {
@@ -361,11 +361,13 @@ System.out.println("unionId is Empty");
 			params.add(one.getInteger("menuOrder"));
 			params.add(one.getString("unionId"));
 
-			mySQLClient.callWithParams(
+			mySQLClient.updateWithParams(
 					"update aad_menus set SUBDOMAIN=?, MENU_ID=?, MENU_PARENT_ID=?, MENU_NAME=?, MENU_ACTION=?, MENU_POPUP_ID=?, MENU_ORDER=? where UNIONID=?",
-					params, new JsonArray(), update -> {
+					params, update -> {
 						if (update.failed()) {
 							update.cause().printStackTrace();
+						} else {
+							System.out.println(update.result().toJson());
 						}
 					});
 		}

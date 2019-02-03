@@ -345,6 +345,8 @@ System.out.println("unionId is Empty");
 					params, new JsonArray(), insert -> {
 						if (insert.failed()) {
 							insert.cause().printStackTrace();
+						} else {
+							System.out.println(insert.result().getOutput());
 						}
 					});
 		} else {

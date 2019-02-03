@@ -231,7 +231,7 @@ public class MainVerticle extends AbstractVerticle {
           data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
 
           save(data);
-          ctx.response().end("{}");
+          ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
     } else {
     	mySQLClient.query("select * from aad_menus where unionId='" + data.getString("unionId") + "'", find -> {
             if (find.succeeded()) {
@@ -341,7 +341,11 @@ public class MainVerticle extends AbstractVerticle {
 			mySQLClient.callWithParams("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
 					params,
 					new JsonArray(),
-					insert -> {});
+					insert -> {
+						if (insert.failed()) {
+							insert.cause().printStackTrace();
+						}
+					});
 		} else {
 			JsonArray params = new JsonArray();
 			params.add(one.getString("subdomain"));
@@ -353,7 +357,12 @@ public class MainVerticle extends AbstractVerticle {
 			params.add(one.getInteger("menuOrder"));
 			params.add(one.getString("unionId"));
 
-			mySQLClient.callWithParams("update aad_menus set SUBDOMAIN=?, MENU_ID=?, MENU_PARENT_ID=?, MENU_NAME=?, MENU_ACTION=?, MENU_POPUP_ID=?, MENU_ORDER=? where UNIONID=?", params, new JsonArray(), update -> {});
+			mySQLClient.callWithParams("update aad_menus set SUBDOMAIN=?, MENU_ID=?, MENU_PARENT_ID=?, MENU_NAME=?, MENU_ACTION=?, MENU_POPUP_ID=?, MENU_ORDER=? where UNIONID=?",
+					params, new JsonArray(), update -> {
+						if (update.failed()) {
+							update.cause().printStackTrace();
+						}
+					});
 		}
 	}
 	

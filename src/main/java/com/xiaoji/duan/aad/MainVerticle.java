@@ -18,8 +18,10 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.ext.asyncsql.MySQLClient;
 import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.sql.ResultSet;
+import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
@@ -31,6 +33,7 @@ public class MainVerticle extends AbstractVerticle {
 
 	private ThymeleafTemplateEngine thymeleaf = null;
 	private JDBCClient mySQLClient = null;
+	private SQLClient mmClient = null;
 
 	@Override
 	public void start(Future<Void> startFuture) throws Exception {
@@ -44,6 +47,16 @@ public class MainVerticle extends AbstractVerticle {
 				.put("autoReconnect", config().getBoolean("mysql.autoReconnect", true))
 				.put("driver_class", "com.mysql.cj.jdbc.Driver");
 		mySQLClient = JDBCClient.createShared(vertx, mySQLClientConfig);
+		
+		JsonObject mmClientConfig = new JsonObject()
+				.put("host", config().getString("mysql.host", "duan-mysql"))
+				.put("port", config().getInteger("mysql.port", 3306))
+				.put("username", config().getString("mysql.username", "duan"))
+				.put("password", config().getString("mysql.password", "1234"))
+				.put("database", config().getString("mysql.database", "duan"))
+				.put("maxConnectionRetries", config().getInteger("mysql.maxConnectionRetries", -1))
+				.put("connectionRetryDelay", config().getInteger("mysql.connectionRetryDelay", 10000));
+		SQLClient mmClient = MySQLClient.createShared(vertx, mmClientConfig);
 		
 		vertx.exceptionHandler(error -> {
 			error.printStackTrace();
@@ -257,15 +270,20 @@ public class MainVerticle extends AbstractVerticle {
 					data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
 					data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
 
-					JsonObject saveObject = null;
+					JsonObject saveObject = new JsonObject();
 					if (one != null) {
-						saveObject = one.mergeIn(data);
+						saveObject.mergeIn(one.mergeIn(data));
 					} else {
-						saveObject = data;
+						saveObject.mergeIn(data);
 					}
 
-					save(saveObject);
-					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
+					vertx.executeBlocking((Future<JsonObject> future) -> {
+						save(saveObject);
+						future.complete();
+					}, res -> {
+						ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
+					});
+					
 				} else {
 					find.cause().printStackTrace();
 					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
@@ -349,6 +367,17 @@ System.out.println("unionId is Empty");
 			params.add(one.getString("menuAction"));
 			params.add(one.getString("menuPopupId"));
 			params.add(one.getInteger("menuOrder"));
+
+			mmClient.callWithParams("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
+					params,
+					new JsonArray(),
+					insert -> {
+						if (insert.failed()) {
+							insert.cause().printStackTrace();
+						} else {
+							System.out.println(insert.result().toJson());
+						}
+					});
 
 			mySQLClient.updateWithParams(
 					"insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",

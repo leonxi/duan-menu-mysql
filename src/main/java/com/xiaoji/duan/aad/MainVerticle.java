@@ -40,6 +40,7 @@ public class MainVerticle extends AbstractVerticle {
 								+ config().getString("mysql.database", "duan"))
 				.put("user", config().getString("mysql.username", "duan"))
 				.put("password", config().getString("mysql.password", "1234"))
+				.put("autoCommitOnClose", true)
 				.put("autoReconnect", config().getBoolean("mysql.autoReconnect", true))
 				.put("driver_class", "com.mysql.cj.jdbc.Driver");
 		mySQLClient = JDBCClient.createShared(vertx, mySQLClientConfig);

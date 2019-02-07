@@ -238,8 +238,7 @@ public class MainVerticle extends AbstractVerticle {
 			data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
 
 			vertx.executeBlocking((Future<JsonObject> future) -> {
-				save(data);
-				future.complete();
+				save(future, data);
 			}, res -> {
 				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
 			});
@@ -266,8 +265,7 @@ public class MainVerticle extends AbstractVerticle {
 					}
 
 					vertx.executeBlocking((Future<JsonObject> future) -> {
-						save(saveObject);
-						future.complete();
+						save(future, saveObject);
 					}, res -> {
 						ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
 					});
@@ -328,8 +326,11 @@ public class MainVerticle extends AbstractVerticle {
 
 				if (one != null) {
 					one.put("isdel", true);
-					save(one);
-					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
+					Future<JsonObject> future = Future.future();
+					save(future, one);
+					future.setHandler(ar -> {
+						ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
+					});
 				} else {
 					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
 				}
@@ -341,7 +342,7 @@ public class MainVerticle extends AbstractVerticle {
 		});
 	}
 
-	private void save(JsonObject one) {
+	private void save(Future<JsonObject> future, JsonObject one) {
 		String unionId = one.getString("unionId", "");
 
 		if (StringUtils.isEmpty(unionId)) {
@@ -361,8 +362,10 @@ System.out.println("unionId is Empty");
 					params, insert -> {
 						if (insert.failed()) {
 							insert.cause().printStackTrace();
+							future.fail(insert.cause());
 						} else {
-							System.out.println(insert.result().toJson());
+							System.out.println(insert.result());
+							future.complete(new JsonObject());
 						}
 					});
 		} else {
@@ -382,8 +385,10 @@ System.out.println("unionId is Empty");
 					params, update -> {
 						if (update.failed()) {
 							update.cause().printStackTrace();
+							future.fail(update.cause());
 						} else {
-							System.out.println(update.result().toJson());
+							System.out.println(update.result());
+							future.complete(new JsonObject());
 						}
 					});
 		}

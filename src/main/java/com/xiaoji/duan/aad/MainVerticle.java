@@ -235,8 +235,13 @@ public class MainVerticle extends AbstractVerticle {
 			data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
 			data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
 
-			save(data);
-			ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
+			vertx.executeBlocking((Future<JsonObject> future) -> {
+				save(data);
+				future.complete();
+			}, res -> {
+				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
+			});
+			
 		} else {
 			mySQLClient.query("select * from aad_menus where unionId='" + data.getString("unionId") + "'", find -> {
 				if (find.succeeded()) {

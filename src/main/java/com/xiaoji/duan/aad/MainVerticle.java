@@ -37,7 +37,7 @@ public class MainVerticle extends AbstractVerticle {
 	public void start(Future<Void> startFuture) throws Exception {
 
 		JsonObject mmClientConfig = new JsonObject()
-				.put("host", config().getString("mysql.host", "duan-mysql"))
+				.put("host", config().getString("mysql.host", "192.168.0.61"))
 				.put("port", config().getInteger("mysql.port", 3306))
 				.put("username", config().getString("mysql.username", "duan"))
 				.put("password", config().getString("mysql.password", "1234"))
@@ -117,7 +117,7 @@ public class MainVerticle extends AbstractVerticle {
 		Future<JsonObject> rootfuture = Future.future();
 
 		mySQLClient.query(
-				"select * from aad_menus where subdomain='" + subdomain + "' and menuParentId=1 order by menuOrder asc",
+				"SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE SUBDOMAIN='" + subdomain + "' AND MENU_PARENT_ID=1 ORDER BY MENU_ORDER ASC",
 				find -> {
 
 					if (find.succeeded()) {
@@ -142,8 +142,8 @@ public class MainVerticle extends AbstractVerticle {
 								System.out.println(subquery.encode());
 
 								mySQLClient.query(
-										"select * from aad_menus where subdomain='" + subdomain + "' and menuParentId="
-												+ rootmenu.getInteger("menuId") + " order by menuOrder asc",
+										"SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE SUBDOMAIN='" + subdomain + "' AND MENU_PARENT_ID="
+												+ rootmenu.getInteger("menuId") + " ORDER BY MENU_ORDER ASC",
 										findsub -> {
 
 											if (findsub.succeeded()) {
@@ -244,7 +244,7 @@ public class MainVerticle extends AbstractVerticle {
 			});
 			
 		} else {
-			mySQLClient.query("select * from aad_menus where unionId='" + data.getString("unionId") + "'", find -> {
+			mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE UNIONID='" + data.getString("unionId") + "'", find -> {
 				if (find.succeeded()) {
 					ResultSet rs = find.result();
 					System.out.println(rs.getOutput());
@@ -286,7 +286,7 @@ public class MainVerticle extends AbstractVerticle {
 						.add(new JsonObject().put("isdel", new JsonObject().put("$exists", false))));
 		System.out.println(query.encode());
 
-		mySQLClient.query("select * from aad_menus where subdomain='" + subdomain + "'", find -> {
+		mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE SUBDOMAIN='" + subdomain + "'", find -> {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
@@ -313,7 +313,7 @@ public class MainVerticle extends AbstractVerticle {
 		String unionId = ctx.request().getParam("unionId");
 		System.out.println(subdomain + "/" + unionId + " delete");
 
-		mySQLClient.query("select * from aad_menus where unionId='" + unionId + "'", find -> {
+		mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE UNIONID='" + unionId + "'", find -> {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();

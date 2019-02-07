@@ -368,9 +368,8 @@ System.out.println("unionId is Empty");
 			params.add(one.getString("menuPopupId"));
 			params.add(one.getInteger("menuOrder"));
 
-			mmClient.callWithParams("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
+			mmClient.updateWithParams("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
 					params,
-					new JsonArray(),
 					insert -> {
 						System.out.println("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)");
 						if (insert.failed()) {

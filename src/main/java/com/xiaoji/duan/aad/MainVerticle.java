@@ -19,7 +19,6 @@ import io.vertx.core.http.HttpServerOptions;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.asyncsql.MySQLClient;
-import io.vertx.ext.jdbc.JDBCClient;
 import io.vertx.ext.sql.ResultSet;
 import io.vertx.ext.sql.SQLClient;
 import io.vertx.ext.web.Router;
@@ -32,22 +31,11 @@ import io.vertx.ext.web.templ.thymeleaf.ThymeleafTemplateEngine;
 public class MainVerticle extends AbstractVerticle {
 
 	private ThymeleafTemplateEngine thymeleaf = null;
-	private JDBCClient mySQLClient = null;
-	private SQLClient mmClient = null;
+	private SQLClient mySQLClient = null;
 
 	@Override
 	public void start(Future<Void> startFuture) throws Exception {
-		JsonObject mySQLClientConfig = new JsonObject()
-				.put("url",
-						"jdbc:mysql://" + config().getString("mysql.host", "duan-mysql") + "/"
-								+ config().getString("mysql.database", "duan"))
-				.put("user", config().getString("mysql.username", "duan"))
-				.put("password", config().getString("mysql.password", "1234"))
-				.put("autoCommitOnClose", true)
-				.put("autoReconnect", config().getBoolean("mysql.autoReconnect", true))
-				.put("driver_class", "com.mysql.cj.jdbc.Driver");
-		mySQLClient = JDBCClient.createShared(vertx, mySQLClientConfig);
-		
+
 		JsonObject mmClientConfig = new JsonObject()
 				.put("host", config().getString("mysql.host", "duan-mysql"))
 				.put("port", config().getInteger("mysql.port", 3306))
@@ -56,7 +44,7 @@ public class MainVerticle extends AbstractVerticle {
 				.put("database", config().getString("mysql.database", "duan"))
 				.put("maxConnectionRetries", config().getInteger("mysql.maxConnectionRetries", -1))
 				.put("connectionRetryDelay", config().getInteger("mysql.connectionRetryDelay", 10000));
-		SQLClient mmClient = MySQLClient.createShared(vertx, mmClientConfig);
+		SQLClient mySQLClient = MySQLClient.createShared(vertx, mmClientConfig);
 		
 		vertx.exceptionHandler(error -> {
 			error.printStackTrace();
@@ -368,19 +356,8 @@ System.out.println("unionId is Empty");
 			params.add(one.getString("menuPopupId"));
 			params.add(one.getInteger("menuOrder"));
 
-			mmClient.updateWithParams("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
-					params,
-					insert -> {
-						System.out.println("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)");
-						if (insert.failed()) {
-							insert.cause().printStackTrace();
-						} else {
-							System.out.println(insert.result().toJson());
-						}
-					});
-
 			mySQLClient.updateWithParams(
-					"insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)",
+					"insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?);",
 					params, insert -> {
 						if (insert.failed()) {
 							insert.cause().printStackTrace();

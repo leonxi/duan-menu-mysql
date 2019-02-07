@@ -43,7 +43,11 @@ public class MainVerticle extends AbstractVerticle {
 				.put("autoReconnect", config().getBoolean("mysql.autoReconnect", true))
 				.put("driver_class", "com.mysql.cj.jdbc.Driver");
 		mySQLClient = JDBCClient.createShared(vertx, mySQLClientConfig);
-
+		
+		vertx.exceptionHandler(error -> {
+			error.printStackTrace();
+		});
+		
 		CreateTable ct = new CreateTable();
 		List<String> ddls = ct.getDdl();
 

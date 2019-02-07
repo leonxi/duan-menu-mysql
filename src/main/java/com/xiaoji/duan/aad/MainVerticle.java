@@ -372,6 +372,7 @@ System.out.println("unionId is Empty");
 					params,
 					new JsonArray(),
 					insert -> {
+						System.out.println("insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?)");
 						if (insert.failed()) {
 							insert.cause().printStackTrace();
 						} else {

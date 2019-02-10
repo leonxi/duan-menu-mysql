@@ -44,7 +44,7 @@ public class MainVerticle extends AbstractVerticle {
 				.put("database", config().getString("mysql.database", "duan"))
 				.put("maxConnectionRetries", config().getInteger("mysql.maxConnectionRetries", -1))
 				.put("connectionRetryDelay", config().getInteger("mysql.connectionRetryDelay", 10000));
-		SQLClient mySQLClient = MySQLClient.createShared(vertx, mmClientConfig);
+		mySQLClient = MySQLClient.createShared(vertx, mmClientConfig);
 		
 		vertx.exceptionHandler(error -> {
 			error.printStackTrace();
@@ -99,7 +99,7 @@ public class MainVerticle extends AbstractVerticle {
 		HttpServerOptions option = new HttpServerOptions();
 		option.setCompressionSupported(true);
 
-		vertx.createHttpServer(option).requestHandler(router::accept).listen(8080, http -> {
+		vertx.createHttpServer(option).requestHandler(router::accept).listen(80, http -> {
 			if (http.succeeded()) {
 				startFuture.complete();
 				System.out.println("HTTP server started on http://localhost:8080");
@@ -122,11 +122,11 @@ public class MainVerticle extends AbstractVerticle {
 
 					if (find.succeeded()) {
 						ResultSet rs = find.result();
-						System.out.println(rs.getOutput());
+						System.out.println("currentmenus " + rs.getNumRows());
 						List<JsonObject> rootMenus = null;
 
-						if (rs.getOutput() != null)
-							rootMenus = rs.getOutput().getList();
+						if (rs.getNumRows() > 0)
+							rootMenus = rs.getRows();
 						else
 							rootMenus = new ArrayList<>();
 
@@ -147,10 +147,10 @@ public class MainVerticle extends AbstractVerticle {
 										findsub -> {
 
 											if (findsub.succeeded()) {
-												System.out.println(findsub.result().getOutput());
+												System.out.println(findsub.result().getRows());
 												future.complete(
 														new JsonObject().put("menu", rootmenu.getString("unionId"))
-																.put("sub_menus", findsub.result().getOutput()));
+																.put("sub_menus", findsub.result().getRows()));
 											} else {
 												future.fail(findsub.cause());
 											}
@@ -232,50 +232,55 @@ public class MainVerticle extends AbstractVerticle {
 		JsonObject data = ctx.getBodyAsJson();
 		System.out.println(data.encode());
 
-		if (null == data.getString("unionId") || "".equals(data.getString("unionId"))) {
-			data.put("menuId", Integer.valueOf(data.getString("menuId")));
-			data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
-			data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
-
-			vertx.executeBlocking((Future<JsonObject> future) -> {
-				save(future, data);
-			}, res -> {
-				ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
-			});
-			
-		} else {
-			mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE UNIONID='" + data.getString("unionId") + "'", find -> {
-				if (find.succeeded()) {
-					ResultSet rs = find.result();
-					System.out.println(rs.getOutput());
-					JsonObject one = null;
-
-					if (rs.getOutput() != null) {
-						one = rs.getOutput().getJsonObject(0);
-					}
-					data.put("menuId", Integer.valueOf(data.getString("menuId")));
-					data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
-					data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
-
-					JsonObject saveObject = new JsonObject();
-					if (one != null) {
-						saveObject.mergeIn(one.mergeIn(data));
+		try {
+			if (null == data.getString("unionId") || "".equals(data.getString("unionId"))) {
+				data.put("menuId", Integer.valueOf(data.getString("menuId")));
+				data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
+				data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
+	
+				vertx.executeBlocking((Future<JsonObject> future) -> {
+					save(future, data);
+				}, res -> {
+					System.out.println("save result " + res);
+					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
+				});
+				
+			} else {
+				mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE UNIONID='" + data.getString("unionId") + "'", find -> {
+					if (find.succeeded()) {
+						ResultSet rs = find.result();
+						System.out.println("save " + rs.getNumRows());
+						JsonObject one = null;
+	
+						if (rs.getOutput() != null) {
+							one = rs.getRows().get(0);
+						}
+						data.put("menuId", Integer.valueOf(data.getString("menuId")));
+						data.put("menuParentId", Integer.valueOf(data.getString("menuParentId")));
+						data.put("menuOrder", Integer.valueOf(data.getString("menuOrder")));
+	
+						JsonObject saveObject = new JsonObject();
+						if (one != null) {
+							saveObject.mergeIn(one.mergeIn(data));
+						} else {
+							saveObject.mergeIn(data);
+						}
+	
+						vertx.executeBlocking((Future<JsonObject> future) -> {
+							save(future, saveObject);
+						}, res -> {
+							ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
+						});
+						
 					} else {
-						saveObject.mergeIn(data);
+						find.cause().printStackTrace();
+						ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
 					}
-
-					vertx.executeBlocking((Future<JsonObject> future) -> {
-						save(future, saveObject);
-					}, res -> {
-						ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");	
-					});
-					
-				} else {
-					find.cause().printStackTrace();
-					ctx.response().putHeader("content-type", "application/json;charset=utf-8").end("{}");
-				}
-
-			});
+	
+				});
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 
@@ -284,17 +289,18 @@ public class MainVerticle extends AbstractVerticle {
 		JsonObject query = new JsonObject().put("subdomain", subdomain).put("$or",
 				new JsonArray().add(new JsonObject().put("isdel", false))
 						.add(new JsonObject().put("isdel", new JsonObject().put("$exists", false))));
-		System.out.println(query.encode());
+		System.out.println("list " + subdomain);
 
 		mySQLClient.query("SELECT UNIONID unionId, SUBDOMAIN subdomain, MENU_ID menuId, MENU_PARENT_ID menuParentId, MENU_NAME menuName, MENU_ACTION menuAction, MENU_POPUP_ID menuPopupId, MENU_ORDER menuOrder FROM AAD_MENUS WHERE SUBDOMAIN='" + subdomain + "'", find -> {
+			System.out.println("===========");
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
-				System.out.println(rs.getOutput());
+				System.out.println("list rows " + rs.getNumRows());
 				List<JsonObject> menus = null;
 
-				if (rs.getOutput() != null)
-					rs.getOutput().getList();
+				if (rs.getNumRows() > 0)
+					menus = rs.getRows();
 				else
 					menus = new ArrayList<>();
 
@@ -317,12 +323,12 @@ public class MainVerticle extends AbstractVerticle {
 
 			if (find.succeeded()) {
 				ResultSet rs = find.result();
-				System.out.println(rs.getOutput());
+				System.out.println("delete " + rs.getNumRows());
 
 				JsonObject one = null;
 
-				if (rs.getOutput() != null)
-					one = rs.getOutput().getJsonObject(0);
+				if (rs.getNumRows() > 0)
+					one = rs.getRows().get(0);
 
 				if (one != null) {
 					one.put("isdel", true);
@@ -347,6 +353,7 @@ public class MainVerticle extends AbstractVerticle {
 
 		if (StringUtils.isEmpty(unionId)) {
 System.out.println("unionId is Empty");
+try {
 			JsonArray params = new JsonArray();
 			params.add(UUID.randomUUID().toString());
 			params.add(one.getString("subdomain"));
@@ -354,43 +361,59 @@ System.out.println("unionId is Empty");
 			params.add(one.getInteger("menuParentId"));
 			params.add(one.getString("menuName"));
 			params.add(one.getString("menuAction"));
-			params.add(one.getString("menuPopupId"));
+			params.add(one.getString("menuPopupId", ""));
 			params.add(one.getInteger("menuOrder"));
+			System.out.println("insert params " + params);
 
 			mySQLClient.updateWithParams(
 					"insert into aad_menus(UNIONID, SUBDOMAIN, MENU_ID, MENU_PARENT_ID, MENU_NAME, MENU_ACTION, MENU_POPUP_ID, MENU_ORDER) values(?, ?, ?, ?, ?, ?, ?, ?);",
 					params, insert -> {
+						System.out.println("insert result");
 						if (insert.failed()) {
 							insert.cause().printStackTrace();
 							future.fail(insert.cause());
 						} else {
-							System.out.println(insert.result());
+							System.out.println("insert.result() " + insert.result());
 							future.complete(new JsonObject());
 						}
 					});
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
 		} else {
 			System.out.println("unionId is exist");
-			JsonArray params = new JsonArray();
-			params.add(one.getString("subdomain"));
-			params.add(one.getInteger("menuId"));
-			params.add(one.getInteger("menuParentId"));
-			params.add(one.getString("menuName"));
-			params.add(one.getString("menuAction"));
-			params.add(one.getString("menuPopupId"));
-			params.add(one.getInteger("menuOrder"));
-			params.add(one.getString("unionId"));
+			
+			boolean isdel = one.getBoolean("isdel", false);
+			
+			if (isdel) {
+				mySQLClient.update("DELETE FROM AAD_MENUS WHERE UNIONID='" + unionId + "'", delete -> {
+					System.out.println(unionId + " is deleted.");
+					future.complete(new JsonObject());
+				});
+			} else {
+				JsonArray params = new JsonArray();
+				params.add(one.getString("subdomain"));
+				params.add(one.getInteger("menuId"));
+				params.add(one.getInteger("menuParentId"));
+				params.add(one.getString("menuName"));
+				params.add(one.getString("menuAction"));
+				params.add(one.getString("menuPopupId", ""));
+				params.add(one.getInteger("menuOrder"));
+				params.add(one.getString("unionId"));
 
-			mySQLClient.updateWithParams(
-					"update aad_menus set SUBDOMAIN=?, MENU_ID=?, MENU_PARENT_ID=?, MENU_NAME=?, MENU_ACTION=?, MENU_POPUP_ID=?, MENU_ORDER=? where UNIONID=?",
-					params, update -> {
-						if (update.failed()) {
-							update.cause().printStackTrace();
-							future.fail(update.cause());
-						} else {
-							System.out.println(update.result());
-							future.complete(new JsonObject());
-						}
-					});
+				mySQLClient.updateWithParams(
+						"update aad_menus set SUBDOMAIN=?, MENU_ID=?, MENU_PARENT_ID=?, MENU_NAME=?, MENU_ACTION=?, MENU_POPUP_ID=?, MENU_ORDER=? where UNIONID=?",
+						params, update -> {
+							if (update.failed()) {
+								update.cause().printStackTrace();
+								future.fail(update.cause());
+							} else {
+								System.out.println(update.result());
+								future.complete(new JsonObject());
+							}
+						});
+			}
+			
 		}
 	}
 
